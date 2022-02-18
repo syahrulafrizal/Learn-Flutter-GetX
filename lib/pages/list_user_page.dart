@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 import '../api/list_user_api_listener.dart';
 import '../api/remove_user_api_listener.dart';
 import '../api/remove_user_api_services.dart';
 import '../models/user_model.dart';
 import '../pages/detail_user_page.dart';
-import 'package:pull_to_refresh/pull_to_refresh.dart';
-
 import '../api/list_user_api_services.dart';
 import '../componets/custom_dialog_information.dart';
 import '../componets/custom_dialog_question.dart';
@@ -16,6 +15,7 @@ import '../controllers/list_user_controller.dart';
 import '../helper/constants.dart';
 import '../helper/my_helper.dart';
 import '../helper/screen.dart';
+import 'form_user_page.dart';
 
 class ListUserPage extends StatelessWidget implements ListUserApiListener {
   const ListUserPage({Key? key}) : super(key: key);
@@ -55,6 +55,27 @@ class ListUserPage extends StatelessWidget implements ListUserApiListener {
               : (c.isError)
                   ? ContentError(onGetListUser: onGetListUser)
                   : ContentSuccess(onGetListUser: onGetListUser);
+        },
+      ),
+      floatingActionButton: GetBuilder<ListUserController>(
+        builder: (c) {
+          return Visibility(
+            visible: !c.isLoading,
+            child: FloatingActionButton(
+              onPressed: () async {
+                dynamic result = await Get.to(
+                  () => const FormUserPage(data: null),
+                );
+                if (result != null) {
+                  c.onRefresh();
+                  onGetListUser("", 1, [], 10, "-user_id");
+                }
+              },
+              tooltip: 'Add',
+              child: const Icon(Icons.add),
+              backgroundColor: const Color(0xFF0D47A1),
+            ),
+          );
         },
       ),
     );
@@ -440,7 +461,17 @@ class ItemData extends StatelessWidget implements RemoveUserApiListener {
             ItemOptionUser(
               item: item,
               title: 'Ubah Data User',
-              action: () {},
+              action: () async {
+                dynamic result = await Get.to(
+                  () => FormUserPage(data: item),
+                );
+                printInfo(info: item.userFullname.toString());
+                if (result != null) {
+                  final c = Get.find<ListUserController>();
+                  c.onRefresh();
+                  onGetListUser("", 1, [], 10, "-user_id");
+                }
+              },
               icon: Icons.edit,
             ),
             ItemOptionUser(
